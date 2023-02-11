@@ -1,7 +1,9 @@
 package main
 
-import "simple-budget-backend/migrations"
+import "simple-budget-backend/api"
 
 func main() {
-	migrations.Migrate()
+	// migrations.Migrate()
+	api.StartApi()
+
 }

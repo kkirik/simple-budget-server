@@ -2,54 +2,43 @@ package migrations
 
 import (
 	"simple-budget-backend/helpers"
-
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"simple-budget-backend/interfaces"
 )
 
-type User struct {
-	gorm.Model
-	Username string
-	Email    string
-	Password string
-}
-
-type Account struct {
-	gorm.Model
-	Type    string
-	Name    string
-	Balance uint
-	UserID  uint
-}
-
-func connectDB() *gorm.DB {
-	db, err := gorm.Open("postgres", "host=localhost port=5432 user=user dbname=budget-db password=budget-password sslmode=disable")
-	helpers.HandleErr(err)
-	return db
-}
-
 func createAccounts() {
-	db := connectDB()
+	db := helpers.ConnectDB()
 
-	users := [2]User{
+	users := &[2]interfaces.User{
 		{Username: "Martin", Email: "martin@martin.com"},
 		{Username: "Michael", Email: "michael@michael.com"},
 	}
 
 	for i := 0; i < len(users); i++ {
+		// Correct one way
 		generatedPassword := helpers.HashAndSalt([]byte(users[i].Username))
-		user := User{Username: users[i].Username, Email: users[i].Email, Password: generatedPassword}
+		user := &interfaces.User{Username: users[i].Username, Email: users[i].Email, Password: generatedPassword}
+
 		db.Create(&user)
 
-		account := Account{Type: "Daily Account", Name: string(users[i].Username + "'s" + " account"), Balance: uint(10000 * int(i+1)), UserID: user.ID}
+		account := &interfaces.Account{
+			Type:    "Daily Account",
+			Name:    string(users[i].Username + "'s" + " account"),
+			Balance: uint(10000 * int(i+1)), UserID: user.ID,
+		}
+
 		db.Create(&account)
 	}
+
 	defer db.Close()
 }
 
 func Migrate() {
-	db := connectDB()
-	db.AutoMigrate(&User{}, &Account{})
+	User := interfaces.User{}
+	Account := interfaces.Account{}
+	db := helpers.ConnectDB()
+
+	db.AutoMigrate(User, Account)
+
 	defer db.Close()
 
 	createAccounts()
